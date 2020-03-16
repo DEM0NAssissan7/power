@@ -1,0 +1,105 @@
+#!/bin/bash
+# Displays all you need to know about your battery
+# The path for the battery name can be found in ~/Documents/batname.txt
+
+batpath=`cat ~/Documents/batname.txt`
+if [[ $batpath ]]; then true;
+else
+echo Please enter in your battery name
+echo Here are the detected batteries:
+ls /sys/class/power_supply
+echo
+echo Please enter which power supply to use. If you are using a laptop, it should be something like "BAT0"
+echo
+read battpath
+echo
+echo Changing battery name...
+echo $battpath > ~/Documents/batname.txt
+fi
+
+batpath=`cat ~/Documents/batname.txt`
+
+if [[ $batpath ]]; then true;
+else
+echo You did not enter a battery name
+echo Please restart the program
+echo Press ctrl+c to close the program
+while [[ true ]]; do read; done
+fi
+
+cd /sys/class/power_supply/
+cd $batpath
+
+volt=`cat voltage_now`
+amp=`cat current_now`
+scvolt=`expr $volt / 1000`
+scvolta=`expr $scvolt / 1000`
+scamp=`expr $amp / 1000`
+scampa=`expr $scamp / 1000`
+
+capacity=`cat charge_now`
+sccapacity=`expr $capacity / 100`
+acapacitymwh=`expr $sccapacity \* $scvolt`
+capacitymwh=`expr $acapacitymwh / 10000`
+capacitywh=`expr $capacitymwh / 1000`
+
+maxcapacity=`cat charge_full`
+maxcapacityfulldesign=`cat charge_full_design`
+scmaxcapacity=`expr $maxcapacity / 100`
+scmaxcapacityfulldesign=`expr $maxcapacityfulldesign / 100`
+dmaxcapacity=`expr $scmaxcapacity / 1000`
+dmaxcapacityfulldesign=`expr $scmaxcapacityfulldesign / 1000`
+
+amaxcapacitymwh=`expr $scmaxcapacity \* $scvolt`
+maxcapacitymwh=`expr $amaxcapacitymwh / 10000`
+maxcapacitywh=`expr $maxcapacitymwh / 1000`
+
+amaxcapacityfulldesignmwh=`expr $scmaxcapacityfulldesign \* $scvolt`
+maxcapacityfulldesignmwh=`expr $amaxcapacityfulldesignmwh / 10000`
+maxcapacityfulldesignwh=`expr $maxcapacityfulldesignmwh / 1000`
+
+power=`expr $volt \* $amp`
+upower=`expr $power / 1000000`
+kpower=`expr $upower / 10`
+scpower=`expr $power / 1000000000`
+dpower=`expr $scpower / 1000`
+
+timeleft=`expr $acapacitymwh / $scpower`
+ctimeleft=`expr $timeleft / 10000`
+ctimeleftm=`expr $ctimeleft \* 60`
+
+mtimeleft=`expr $timeleft \* 60`
+cmtimeleft=`expr $mtimeleft / 10000`
+dtimeleftm=`expr $cmtimeleft - $ctimeleftm`
+
+echo All of these are estimates
+echo
+echo Current power usage:
+echo
+echo $scvolt mV
+echo $scvolta V
+echo
+echo $scamp mA
+echo $scampa A
+echo
+echo $scpower mW
+echo $dpower W
+echo
+echo
+echo Time left until depleted:
+echo $ctimeleft:$dtimeleftm
+echo
+echo
+echo Battery left:
+echo $capacitymwh mWh
+echo $capacitywh Wh
+echo
+echo
+echo Max capacity:
+echo $maxcapacitymwh mWh
+echo $maxcapacitywh Wh
+echo
+echo
+echo Max capacity design:
+echo $maxcapacityfulldesignmwh mWh
+echo $maxcapacityfulldesignwh Wh
